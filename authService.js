@@ -342,18 +342,11 @@ angular.module("authService", []).provider('authService', ['$injector', function
             function (value) {
                 var elem;
 
-                if (element.is(':button,a')) {
+                if (element.is(':button,a,:input')) {
                     elem = element;
                 } else
-                if (element.is(':input')) {
-                    elem = element.parents('.form-group:first,.input-group:first');
-                } else
-                if (element.is('.panel-body')) {
-                    elem = element.parents('.panel:first');
-                } else
-                if (element.is('td')) {
-                    // se for coluna, pega botões ou links
-                    elem = element.find(':button,a');
+                if (element.is('.panel-body') || element.is('td')) {
+                    elem = element.find(':button,a,:input');
                 }
 
                 if (!elem || elem.length == 0) {
