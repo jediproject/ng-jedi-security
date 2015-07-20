@@ -79,7 +79,7 @@ angular.module("authService", []).provider('authService', ['$injector', function
                         if (_authSettings.validateTokenUrl) {
                             var deferred = $q.defer();
 
-                            $http.post(_authSettings.authUrlBase + _authSettings.validateTokenUrl, undefined, {bypassExceptionInterceptor: true}).success(function (response) {
+                            $http.post(_authSettings.authUrlBase + _authSettings.validateTokenUrl, undefined, { bypassExceptionInterceptor: true }).success(function (response) {
                                 deferred.resolve(response);
                                 $rootScope.$broadcast('auth:validation-success', _identity);
                             }).error(function (err, status, headers, config) {
@@ -301,23 +301,31 @@ angular.module("authService", []).provider('authService', ['$injector', function
                 return authService.hasRoles($interpolate(asRolesToShow)($scope));
             },
             function (value) {
-                var tableId = $(element).closest('table').attr('id');
-                var index = element.index() + 1;
+                var elem;
+
+                if (element.is(':button,a')) {
+                    elem = element;
+                } else
+                if (element.is(':input')) {
+                    elem = element.parents('.form-group:first,.input-group:first');
+                } else
+                if (element.is('.panel-body')) {
+                    elem = element.parents('.panel:first');
+                } else
+                if (element.is('td')) {
+                    // se coluna de grid, adiciona todos os tds da coluna em questão
+                    var index = element.index() + 1;
+                    elem = element.parents('table:first').find('td:nth-child(' + index + '),th:nth-child(' + index + ')').add(element);
+                }
+
+                if (!elem || elem.length == 0) {
+                    elem = element;
+                }
 
                 if (!value) {
-                    element.hide();
-
-                    if (element.is('td')) {
-                        $('table#' + tableId + ' td:nth-child(' + index + ')').hide();
-                        $('table#' + tableId + ' th:nth-child( ' + index + ')').hide();
-                    }
-                }
-                else {
-                    element.show();
-
-                    if (element.is('td')) {
-                        $('table#' + tableId + ' td:nth-child(' + index + '),th:nth-child( ' + index + ')').show();
-                    }
+                    elem.hide();
+                } else {
+                    elem.show();
                 }
             });
         }
@@ -332,22 +340,58 @@ angular.module("authService", []).provider('authService', ['$injector', function
                 return authService.hasRoles($interpolate(asRolesToActive)($scope));
             },
             function (value) {
-                if (!value) {
-                    element.attr('disabled', true);
+                var elem;
 
-                    if (element.is('td')) {
-                        element.find('a').attr('disabled', true).unbind('click').click(function (e) {
-                            e.stopPropagation();
-                            return false;
-                        });
-                    }
+                if (element.is(':button,a')) {
+                    elem = element;
+                } else
+                if (element.is(':input')) {
+                    elem = element.parents('.form-group:first,.input-group:first');
+                } else
+                if (element.is('.panel-body')) {
+                    elem = element.parents('.panel:first');
+                } else
+                if (element.is('td')) {
+                    // se for coluna, pega botões ou links
+                    elem = element.find(':button,a');
                 }
-                else {
-                    element.removeAttr('disabled');
 
-                    if (element.is('td')) {
-                        element.find('a').attr('disabled', false);
-                    }
+                if (!elem || elem.length == 0) {
+                    elem = element;
+                }
+
+                if (!value) {
+                    // se for coluna, pega botões ou links
+                    angular.forEach(elem, function (item) {
+                        var $item = $(item);
+                        if ($item.is('a') || $item.is(':button')) {
+                            $item.attr('disabled', true);
+                        } else {
+                            $item.attr('readonly', true);
+                        }
+                        var events = $._data($item[0]).events;
+                        if (events && events.click) {
+                            $._data($item[0], 'as.click', events.click.slice(0));
+                        }
+                    });
+
+                    elem.unbind('click').click(function (e) {
+                        e.stopPropagation();
+                        return false;
+                    });
+                } else {
+                    elem.removeAttr('readonly');
+                    elem.removeAttr('disabled');
+
+                    angular.forEach(elem, function (item) {
+                        var $item = $(item);
+                        var clicks = $._data($item[0], 'as.click');
+                        if (clicks) {
+                            angular.forEach(clicks, function (click) {
+                                $item.unbind('click').click(click);
+                            });
+                        }
+                    });
                 }
             });
         }
