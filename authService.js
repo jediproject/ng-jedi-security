@@ -72,14 +72,27 @@ angular.module("authService", []).provider('authService', ['$injector', function
                         $rootScope.$broadcast('auth:session-expired');
                     } else {
 
-                        _identity = angular.copy(_defaultIdentity);
-                        _identity = angular.extend(_identity, authData.identity);
+                        _identity = angular.extend(angular.copy(_defaultIdentity), authData.identity);
 
                         // validate token api
                         if (_authSettings.validateTokenUrl) {
                             var deferred = $q.defer();
 
                             $http.post(_authSettings.authUrlBase + _authSettings.validateTokenUrl, undefined, { bypassExceptionInterceptor: true }).success(function (response) {
+                                _identity.expires = new Date().getTime() + response.expires_in;
+                                _identity.roles = response.roles ? response.roles.split(',') : [];
+
+                                // custom identity object
+                                if (_authSettings.handleTokenResponse) {
+                                    _identity = _authSettings.handleTokenResponse(response, _identity);
+                                }
+
+                                if (_identity.useRefreshTokens) {
+                                    _storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: response.refresh_token, useRefreshTokens: true });
+                                } else {
+                                    _storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: "", useRefreshTokens: false });
+                                }
+
                                 deferred.resolve(response);
                                 $rootScope.$broadcast('auth:validation-success', _identity);
                             }).error(function (err, status, headers, config) {
@@ -136,6 +149,19 @@ angular.module("authService", []).provider('authService', ['$injector', function
                     deferred.reject(err);
 
                     $rootScope.$broadcast('auth:login-error', err, status, config, loginData);
+                });
+
+                return deferred.promise;
+            },
+
+            signUp: function (signUpData) {
+                // signup api
+                var deferred = $q.defer();
+
+                $http.post(_authSettings.authUrlBase + _authSettings.signUpUrl, signUpData, {bypassExceptionInterceptor: true}).success(function () {
+                    deferred.resolve.apply(deferred.resolve, arguments);
+                }).error(function () {
+                    deferred.reject.apply(deferred.reject, arguments);
                 });
 
                 return deferred.promise;
@@ -401,4 +427,9 @@ angular.module("authService", []).provider('authService', ['$injector', function
         delete $httpProvider.defaults.headers[method]['X-Requested-With'];
     });
 
+}]).run(['$log', 'authService', '$timeout', function($log, authService, $timeout) {
+    $timeout(function(){
+        $log.info('Initializing authService');
+        authService.initialize();
+    });
 }]);
