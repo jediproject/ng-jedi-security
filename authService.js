@@ -230,13 +230,15 @@ define(["cryptojslib"], function(cryptojslib) {
 			}
 		}];
 
-	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', 'authService', auth, function ($q, $injector, $location, $rootScope, authService) {
+	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', function ($q, $injector, $location, $rootScope) {
 
 		var authInterceptorServiceFactory = {};
 
 		var _request = function (config) {
 
 			config.headers = config.headers || {};
+
+			var authService = $injector.get('authService');
 
 			var authData = authService.getAuthData();			
 			var token = authService.getToken();
