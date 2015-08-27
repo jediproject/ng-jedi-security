@@ -240,7 +240,7 @@ define(["cryptojslib"], function(cryptojslib) {
 
 			var authData = authService.getAuthData();			
 			var token = authService.getToken();
-			
+
 			if (token) {
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
@@ -391,18 +391,14 @@ define(["cryptojslib"], function(cryptojslib) {
 		// register authInterceptor
 		$httpProvider.interceptors.push('authInterceptorService');
 
-		angular.forEach(['get', 'post', 'put', 'patch', 'delete'], function (method) {
-			if (!$httpProvider.defaults.headers[method]) {
-				$httpProvider.defaults.headers[method] = {};
-			}
-			$httpProvider.defaults.headers[method]['If-Modified-Since'] = 'Thu, 01 Jan 1970 00:00:00 GMT';
-			delete $httpProvider.defaults.headers[method]['X-Requested-With'];
-		});
-
+		angular.forEach($httpProvider.defaults.headers, function (header) {
+            delete header['X-Requested-With'];
+            header['If-Modified-Since'] = 'Thu, 01 Jan 1970 00:00:00 GMT';
+        });
 	}]).run(['$log', 'authService', '$timeout', function($log, authService, $timeout) {
 		$timeout(function(){
 			$log.info('Initializing authService');
 			authService.initialize();
 		})}
-	])
+	]);
 });
