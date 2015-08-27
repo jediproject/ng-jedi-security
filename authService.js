@@ -7,7 +7,7 @@
 
 define(["cryptojslib"], function(cryptojslib) {
 
-	angular.module("authService","cryptojslib", []).provider('authService',['$injector','cryptojslib', function ($injector, cryptojslib) {
+	angular.module("authService", []).provider('authService',['$injector', function ($injector) {
 		var _authSettings = {
 			storageKey: 'authorizationData',
 			clientId: 'ngAuthApp'/*,
@@ -230,7 +230,7 @@ define(["cryptojslib"], function(cryptojslib) {
 			}
 		}];
 
-	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', 'cryptojslib', 'authService', auth, function ($q, $injector, $location, $rootScope, cryptojslib, authService) {
+	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', 'authService', auth, function ($q, $injector, $location, $rootScope, authService) {
 
 		var authInterceptorServiceFactory = {};
 
