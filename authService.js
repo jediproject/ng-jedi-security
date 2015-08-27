@@ -220,7 +220,7 @@ define(["cryptojslib"], function(cryptojslib) {
 				
 				getAuthData: function(){
 					return _storageService.get(_authSettings.storageKey);
-				}.
+				},
 
 				isAuthenticated: function (roles) {
 					return _identity.isAuth;
@@ -242,6 +242,7 @@ define(["cryptojslib"], function(cryptojslib) {
 			var token = authService.getToken();
 
 			if (token) {
+				var seconds = new Date().getTime();
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
 				config.headers.Validation = cryptojslib.hash(authData.token + authData.validation + seconds);
