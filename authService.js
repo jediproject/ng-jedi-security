@@ -7,7 +7,7 @@
 
 define(["cryptojslib"], function(cryptojslib) {
 
-	angular.module("authService", []).provider('authService',['$injector', function ($injector) {
+	angular.module("authService", []).provider('authService', ['$injector', function ($injector) {
 		var _authSettings = {
 			storageKey: 'authorizationData',
 			clientId: 'ngAuthApp'/*,
@@ -81,8 +81,7 @@ define(["cryptojslib"], function(cryptojslib) {
 							return deferred.promise;
 						} else {
 							$rootScope.$broadcast('auth:validation-success', _identity);
-						}
-						
+						}						
 					} else {
 						$rootScope.$broadcast('auth:invalid');
 					}
@@ -92,10 +91,7 @@ define(["cryptojslib"], function(cryptojslib) {
 
 					var data = { grant_type: 'password' };
 					data = angular.extend(data, loginData);
-
-					if (loginData.useRefreshTokens) {
-						data.client_id = _authSettings.clientId;
-					}
+					data.client_id = _authSettings.clientId;
 
 					var deferred = $q.defer();
 
@@ -113,7 +109,7 @@ define(["cryptojslib"], function(cryptojslib) {
 							_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: response.refresh_token, useRefreshTokens: true });
 						} else {
 							_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: "", useRefreshTokens: false });
-                                }
+						}
 
 						deferred.resolve(response);
 
@@ -222,6 +218,10 @@ define(["cryptojslib"], function(cryptojslib) {
 					return _storageService.get(_authSettings.storageKey);
 				},
 
+				getAuthSettings: function () {
+				    return _authSettings;
+				},
+
 				isAuthenticated: function (roles) {
 					return _identity.isAuth;
 				},
@@ -239,14 +239,15 @@ define(["cryptojslib"], function(cryptojslib) {
 			config.headers = config.headers || {};
 
 			var authService = $injector.get('authService');
-
 			var authData = authService.getAuthData();			
+			var settings = authService.getAuthSettings();			
 			var token = authService.getToken();
 
 			if (token) {
 				var seconds = new Date().getTime();
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
+				config.clientId = settings.clientId;
 				config.headers.Validation = cryptojslib.hash(authData.token + authData.validation + seconds);
 			}
 
