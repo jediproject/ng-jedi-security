@@ -5,7 +5,7 @@
 
 'use strict';
 
-define(["cryptojslib"], function(cryptojslib) {
+define(["cryptojslib"], function() {
 
 	angular.module("authService", []).provider('authService', ['$injector', function ($injector) {
 		var _authSettings = {
@@ -40,7 +40,6 @@ define(["cryptojslib"], function(cryptojslib) {
 						if (_.contains(this.roles, attributes[i])) {
 							return true;
 						}
-
 					}
 				}
 				return false;
@@ -81,7 +80,7 @@ define(["cryptojslib"], function(cryptojslib) {
 							return deferred.promise;
 						} else {
 							$rootScope.$broadcast('auth:validation-success', _identity);
-						}						
+						}
 					} else {
 						$rootScope.$broadcast('auth:invalid');
 					}
@@ -227,7 +226,7 @@ define(["cryptojslib"], function(cryptojslib) {
 				},
 
 				_resetAuthData: _resetAuthData
-			}
+			};
 		}];
 
 	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', function ($q, $injector, $location, $rootScope) {
@@ -248,11 +247,11 @@ define(["cryptojslib"], function(cryptojslib) {
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
 				config.clientId = settings.clientId;
-				config.headers.Validation = cryptojslib.hash(authData.token + authData.validation + seconds);
+				config.headers.Validation = CryptoJS.MD5(authData.token + authData.validation + seconds).toString();
 			}
 
 			return config;
-		}
+		};
 
 		var _responseError = function (rejection) {
 			if (rejection.status === 401 && !rejection.config.bypassExceptionInterceptor) {
@@ -268,7 +267,7 @@ define(["cryptojslib"], function(cryptojslib) {
 				}
 			}
 			return $q.reject(rejection);
-		}
+		};
 
 		authInterceptorServiceFactory.request = _request;
 		authInterceptorServiceFactory.responseError = _responseError;
@@ -331,7 +330,7 @@ define(["cryptojslib"], function(cryptojslib) {
 					}
 				});
 			}
-		}
+		};
 	}]).directive('asRolesToActive', ['authService', '$interpolate', function (authService, $interpolate) {
 		return {
 			restrict: 'A',
@@ -390,7 +389,7 @@ define(["cryptojslib"], function(cryptojslib) {
 					}
 				});
 			}
-		}
+		};
 	}]).config(['$httpProvider', function ($httpProvider) {
 		// register authInterceptor
 		$httpProvider.interceptors.push('authInterceptorService');
@@ -403,6 +402,6 @@ define(["cryptojslib"], function(cryptojslib) {
 		$timeout(function(){
 			$log.info('Initializing authService');
 			authService.initialize();
-		})}
-	]);
+		});
+	}]);
 });
