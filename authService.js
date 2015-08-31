@@ -5,7 +5,13 @@
 
 'use strict';
 
-define(["cryptojslib"], function() {
+(function (factory) {
+	if (typeof define === 'function') {
+		define(["cryptojslib", "angular"], factory);
+	} else {
+		return factory();
+	}
+}(function(){
 
 	angular.module("authService", []).provider('authService', ['$injector', function ($injector) {
 		var _authSettings = {
@@ -404,4 +410,4 @@ define(["cryptojslib"], function() {
 			authService.initialize();
 		});
 	}]);
-});
+}));
