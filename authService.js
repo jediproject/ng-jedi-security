@@ -102,6 +102,7 @@
 
 					$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, jQuery.param(data), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
 
+						_identity.isAuth = true;
 						_identity.expires = new Date().getTime() + response.expires_in;
 						_identity.roles = response.roles ? response.roles.split(',') : [];
 
