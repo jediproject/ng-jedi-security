@@ -103,6 +103,7 @@
 					$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, jQuery.param(data), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
 
 						_identity.isAuth = true;
+						_identity.validation = response.validation;
 						_identity.expires = new Date().getTime() + response.expires_in;
 						_identity.roles = response.roles ? response.roles.split(',') : [];
 
@@ -171,6 +172,7 @@
 							$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
 
 								_identity.isAuth = true;
+								_identity.validation = response.validation;
 								_identity.expires = new Date().getTime() + response.expires_in;
 								_identity.roles = response.roles ? response.roles.split(',') : [];
 
@@ -254,7 +256,7 @@
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
 				config.clientId = settings.clientId;
-				config.headers.Validation = CryptoJS.MD5(authData.token + authData.validation + seconds).toString();
+				config.headers.Validation = CryptoJS.MD5(authData.token + authData.identity.validation + seconds).toString();
 			}
 
 			return config;
