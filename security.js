@@ -137,7 +137,9 @@
 				},
 
 				signUp: function (loginData) {
-					return $http.post(_authSettings.authUrlBase + _authSettings.signUpUrl, loginData);
+					var deferred = $q.defer();
+					$http.post(_authSettings.authUrlBase + _authSettings.signUpUrl, loginData, { bypassExceptionInterceptor: true }).success(deferred.resolve).error(deferred.reject);
+					return deferred.promise;
 				},
 
 				signIn: function (loginData) {
