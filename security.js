@@ -1,7 +1,6 @@
-﻿// author: Fábio Henrique da Silva Viana <fabiohsv@ciandt.com> 
-// version: 1.0.0
+﻿// author: Fábio Henrique da Silva Viana <fabiohsv@ciandt.com>
 // license: MIT
-// homepage: https://github.com/fabioviana/angular-authService
+// homepage: https://github.com/jediproject/ng-jedi-security.git
 
 'use strict';
 
@@ -13,25 +12,41 @@
 	}
 }(function(){
 
-	angular.module("authService", []).provider('authService', ['$injector', function ($injector) {
+	var _storageService = {
+		get: function (id) {
+			return JSON.parse(localStorage.getItem(id))
+		},
+		set: function (id, obj) {
+			return localStorage.setItem(id, JSON.stringify(obj))
+		},
+		remove: function (id) {
+			return localStorage.removeItem(id)
+		}
+	};
+
+	var _getAuthSettings; // function será definido abaixo
+
+	var _getAuthData = function() {
+		return _storageService.get(_getAuthSettings().storageKey);
+	};
+
+	var _resetAuthData; // function será definido abaixo
+
+	angular.module("jedi.security", []).provider('jedi.security.SecurityService', ['$injector', function ($injector) {
 		var _authSettings = {
-			storageKey: 'authorizationData',
-			clientId: 'ngAuthApp'/*,
+			resolveRoles: function(response) {
+				return response.roles ? response.roles.split(',') : [];
+			},
+			storageKey: 'jediSecurityData',
+			clientId: 'jediSecurity'/*,
 			signInUrl: '/auth',
 			signOutUrl: '/auth/signout',
-			validateTokenUrl: '/auth/validatetoken'*/
+			validateTokenUrl: '/auth/validatetoken',
+			refreshTokenUrl: '/auth'*/
 		};
 
-		var _storageService = {
-			get: function (id) {
-				return JSON.parse(localStorage.getItem(id))
-			},
-			set: function (id, obj) {
-				return localStorage.setItem(id, JSON.stringify(obj))
-			},
-			remove: function (id) {
-				return localStorage.removeItem(id)
-			}
+		_getAuthSettings = function () {
+	    	return _authSettings;
 		};
 
 		var _defaultIdentity = {
@@ -54,13 +69,40 @@
 
 		var _identity = angular.copy(_defaultIdentity);
 
-		var _resetAuthData = function () {
+		_resetAuthData = function () {
 			_storageService.remove(_authSettings.storageKey);
 			_identity = angular.copy(_defaultIdentity);
 		};
 
+		var _setIdentity = function (response) {
+			_identity.isAuth = true;
+			if (response.validation) {
+				_identity.validation = response.validation;
+			}
+
+			if (response.expires_in) {
+				// TODO tratar adequadamente
+				_identity.expires = new Date().getTime() + response.expires_in;
+			}
+
+			if (_authSettings.resolveRoles) {
+				_identity.roles = _authSettings.resolveRoles(response);
+			}
+
+			// custom identity object
+			if (_authSettings.onCreateIdentity) {
+				_identity = _authSettings.onCreateIdentity(response, _identity);
+			}
+
+			if (_identity.useRefreshTokens) {
+				_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: response.refresh_token, useRefreshTokens: true });
+			} else {
+				_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: "", useRefreshTokens: false });
+			}
+		}
+
 		this.config = function (value) {
-			_authSettings = value;
+			angular.extend(_authSettings, value);
 		};
 
 		this.$get = ['$http', '$q', '$rootScope', function ($http, $q, $rootScope) {
@@ -68,7 +110,7 @@
 				initialize: function () {
 					var authData = _storageService.get(_authSettings.storageKey);
 					if (authData && authData.identity) {
-						
+
 						_identity = angular.extend(angular.copy(_defaultIdentity), authData.identity);
 
 						// validate token api
@@ -76,20 +118,26 @@
 							var deferred = $q.defer();
 
 							$http.post(_authSettings.authUrlBase + _authSettings.validateTokenUrl, undefined, { bypassExceptionInterceptor: true }).success(function (response) {
+								_setIdentity(response);
+
 								deferred.resolve(response);
-								$rootScope.$broadcast('auth:validation-success', _identity);
+								$rootScope.$broadcast('jedi.security:validation-success', _identity);
 							}).error(function (err, status, headers, config) {
 								_resetAuthData();
 								deferred.reject(err);
-								$rootScope.$broadcast('auth:validation-error', err, status, config);
+								$rootScope.$broadcast('jedi.security:validation-error', err, status, config);
 							});
 							return deferred.promise;
 						} else {
-							$rootScope.$broadcast('auth:validation-success', _identity);
+							$rootScope.$broadcast('jedi.security:validation-success', _identity);
 						}
 					} else {
-						$rootScope.$broadcast('auth:invalid');
+						$rootScope.$broadcast('jedi.security:invalid');
 					}
+				},
+
+				signUp: function (loginData) {
+					return $http.post(_authSettings.authUrlBase + _authSettings.signUpUrl, loginData);
 				},
 
 				signIn: function (loginData) {
@@ -102,25 +150,11 @@
 
 					$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, jQuery.param(data), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
 
-						_identity.isAuth = true;
-						_identity.validation = response.validation;
-						_identity.expires = new Date().getTime() + response.expires_in;
-						_identity.roles = response.roles ? response.roles.split(',') : [];
-
-						// custom identity object
-						if (_authSettings.handleTokenResponse) {
-							_identity = _authSettings.handleTokenResponse(response, _identity);
-						}
-
-						if (_identity.useRefreshTokens) {
-							_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: response.refresh_token, useRefreshTokens: true });
-						} else {
-							_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: "", useRefreshTokens: false });
-						}
+						_setIdentity(response);
 
 						deferred.resolve(response);
 
-						$rootScope.$broadcast('auth:login-success', _identity);
+						$rootScope.$broadcast('jedi.security:login-success', _identity);
 
 					}).error(function (err, status, headers, config) {
 						
@@ -128,7 +162,7 @@
 						
 						deferred.reject(err);
 
-						$rootScope.$broadcast('auth:login-error', err, status, config, loginData);
+						$rootScope.$broadcast('jedi.security:login-error', err, status, config, loginData);
 						
 					});
 
@@ -144,13 +178,13 @@
 						_resetAuthData();
 
 						deferred.resolve(response);
-						$rootScope.$broadcast('auth:logout-success', response, status, config, cause);
+						$rootScope.$broadcast('jedi.security:logout-success', response, status, config, cause);
 					}).error(function (err, status, headers, config) {
 						// limpa dados
 						_resetAuthData();
 
 						deferred.reject(err);
-						$rootScope.$broadcast('auth:logout-error', err, status, config, cause);
+						$rootScope.$broadcast('jedi.security:logout-error', err, status, config, cause);
 					});
 
 					return deferred.promise;
@@ -169,21 +203,12 @@
 
 							_storageService.remove(_authSettings.storageKey);
 
-							$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
+							$http.post(_authSettings.authUrlBase + _authSettings.refreshTokenUrl, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
 
-								_identity.isAuth = true;
-								_identity.validation = response.validation;
-								_identity.expires = new Date().getTime() + response.expires_in;
-								_identity.roles = response.roles ? response.roles.split(',') : [];
+								_identity.useRefreshTokens = true;
+								_setIdentity(response);
 
-								// custom identity object
-								if (_authSettings.handleTokenResponse) {
-									_identity = _authSettings.handleTokenResponse(_identity);
-								}
-
-								_storageService.set(_authSettings.storageKey, { token: response.access_token, identity: _identity, refreshToken: response.refresh_token, useRefreshTokens: true });
-
-								$rootScope.$broadcast('auth:refresh-success');
+								$rootScope.$broadcast('jedi.security:refresh-success');
 
 								deferred.resolve(response);
 
@@ -192,7 +217,7 @@
 								_resetAuthData();
 
 								deferred.reject(err);
-								$rootScope.$broadcast('auth:refresh-error', err, status, config);
+								$rootScope.$broadcast('jedi.security:refresh-error', err, status, config);
 							});
 						}
 					}
@@ -209,36 +234,16 @@
 					}
 				},
 
-				useRefreshTokens: function () {
-					var authData = _storageService.get(_authSettings.storageKey);
-					if (authData) {
-						return authData.useRefreshTokens;
-					} else {
-						return false;
-					}
-				},
-
 				hasRoles: function (roles) {
 					return _identity.hasRoles(roles);
-				},
-				
-				getAuthData: function(){
-					return _storageService.get(_authSettings.storageKey);
-				},
-
-				getAuthSettings: function () {
-				    return _authSettings;
 				},
 
 				isAuthenticated: function (roles) {
 					return _identity.isAuth;
-				},
-
-				_resetAuthData: _resetAuthData
+				}
 			};
 		}];
-
-	}]).factory('authInterceptorService', ['$q', '$injector', '$location', '$rootScope', function ($q, $injector, $location, $rootScope) {
+	}]).factory('jedi.security.SecurityInterceptor', ['$q', '$injector', '$location', '$rootScope', function ($q, $injector, $location, $rootScope) {
 
 		var authInterceptorServiceFactory = {};
 
@@ -246,17 +251,17 @@
 
 			config.headers = config.headers || {};
 
-			var authService = $injector.get('authService');
-			var authData = authService.getAuthData();			
-			var settings = authService.getAuthSettings();			
+			var authService = $injector.get('jedi.security.SecurityService');
 			var token = authService.getToken();
 
 			if (token) {
+				var authData = _getAuthData();
+				var settings = _getAuthSettings();			
 				var seconds = new Date().getTime();
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
-				config.clientId = settings.clientId;
 				config.headers.Validation = CryptoJS.MD5(authData.token + authData.identity.validation + seconds).toString();
+				config.clientId = settings.clientId;
 			}
 
 			return config;
@@ -264,15 +269,17 @@
 
 		var _responseError = function (rejection) {
 			if (rejection.status === 401 && !rejection.config.bypassExceptionInterceptor) {
-				var authService = $injector.get('authService');
-				if (authService.useRefreshTokens()) {
+				var authData = _getAuthData();
+				if (authData && authData.useRefreshTokens) {
+					var authService = $injector.get('jedi.security.SecurityService');
 					authService.refreshToken();
+					// todo: verificar como resubmeter a req. após renovar token
 				} else {
 					// limpa dados de autenticação
-					authService._resetAuthData();
+					_resetAuthData();
 
 					// emite evento de sessão expirada
-					$rootScope.$broadcast('auth:session-expired', rejection.data, rejection.status, rejection.config);
+					$rootScope.$broadcast('jedi.security:session-expired', rejection.data, rejection.status, rejection.config);
 				}
 			}
 			return $q.reject(rejection);
@@ -282,8 +289,7 @@
 		authInterceptorServiceFactory.responseError = _responseError;
 
 		return authInterceptorServiceFactory;
-
-	}]).filter('hasRoles', ['authService', function (authService) {
+	}]).filter('hasRoles', ['jedi.security.SecurityService', function (authService) {
 		return function (arr, roles) {
 
 			if (!authService.hasRoles(roles)) {
@@ -292,7 +298,7 @@
 
 			return arr;
 		};
-	}]).filter('isAuthenticated', ['authService', function (authService) {
+	}]).filter('isAuthenticated', ['jedi.security.SecurityService', function (authService) {
 		return function (arr) {
 
 			if (!authService.isAuthenticated) {
@@ -301,11 +307,11 @@
 
 			return arr;
 		};
-	}]).directive('asRolesToShow', ['authService', '$interpolate', function (authService, $interpolate) {
+	}]).directive('jdRolesToShow', ['jedi.security.SecurityService', '$interpolate', function (authService, $interpolate) {
 		return {
 			restrict: 'A',
 			link: function ($scope, element) {
-				var asRolesToShow = element.attr('as-roles-to-show');
+				var asRolesToShow = element.attr('jd-roles-to-show');
 
 				$scope.$watch(function () {
 					return authService.hasRoles($interpolate(asRolesToShow)($scope));
@@ -340,11 +346,11 @@
 				});
 			}
 		};
-	}]).directive('asRolesToActive', ['authService', '$interpolate', function (authService, $interpolate) {
+	}]).directive('jdRolesToActive', ['jedi.security.SecurityService', '$interpolate', function (authService, $interpolate) {
 		return {
 			restrict: 'A',
 			link: function ($scope, element) {
-				var asRolesToActive = element.attr('as-roles-to-active');
+				var asRolesToActive = element.attr('jd-roles-to-active');
 
 				$scope.$watch(function () {
 					return authService.hasRoles($interpolate(asRolesToActive)($scope));
@@ -401,15 +407,15 @@
 		};
 	}]).config(['$httpProvider', function ($httpProvider) {
 		// register authInterceptor
-		$httpProvider.interceptors.push('authInterceptorService');
+		$httpProvider.interceptors.push('jedi.security.SecurityInterceptor');
 
 		angular.forEach($httpProvider.defaults.headers, function (header) {
             delete header['X-Requested-With'];
             header['If-Modified-Since'] = 'Thu, 01 Jan 1970 00:00:00 GMT';
-        });
-	}]).run(['$log', 'authService', '$timeout', function($log, authService, $timeout) {
+		});
+	}]).run(['$log', 'jedi.security.SecurityService', '$timeout', function($log, authService, $timeout) {
 		$timeout(function(){
-			$log.info('Initializing authService');
+			$log.info('Initializing jedi security component');
 			authService.initialize();
 		});
 	}]);

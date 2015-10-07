@@ -1,12 +1,12 @@
 {
-  "name": "angular-authService",
+  "name": "ng-jedi-security",
   "version": "0.0.1",
-  "homepage": "https://github.com/fabioviana/angular-authService",
+  "homepage": "https://github.com/jediproject/ng-jedi-security.git",
   "authors": [
     "Fábio Henrique da Silva Viana <fabiohsv@ciandt.com>"
   ],
   "description": "Authentication and Authorization angular component with token strategy",
-  "main": "authService.js",
+  "main": "security.js",
   "moduleType": [
     "globals"
   ],
@@ -17,7 +17,8 @@
     "authorization",
     "security",
     "permission",
-    "role"
+    "role",
+    "grant"
   ],
   "license": "MIT",
   "dependencies": {
