@@ -1,4 +1,4 @@
-﻿// author: Fábio Henrique da Silva Viana <fabiohsv@ciandt.com>
+// author: Fábio Henrique da Silva Viana <fabiohsv@ciandt.com>
 // license: MIT
 // homepage: https://github.com/jediproject/ng-jedi-security.git
 
@@ -159,13 +159,13 @@
 						$rootScope.$broadcast('jedi.security:login-success', _identity);
 
 					}).error(function (err, status, headers, config) {
-						
+
 						_resetAuthData();
-						
+
 						deferred.reject(err);
 
 						$rootScope.$broadcast('jedi.security:login-error', err, status, config, loginData);
-						
+
 					});
 
 					return deferred.promise;
@@ -258,7 +258,7 @@
 
 			if (token) {
 				var authData = _getAuthData();
-				var settings = _getAuthSettings();			
+				var settings = _getAuthSettings();
 				var seconds = new Date().getTime();
 				config.headers.Authorization = 'Bearer ' + token;
 				config.headers.ValidationTime = seconds;
@@ -407,6 +407,55 @@
 				});
 			}
 		};
+	}]).directive('jdActive', ['jedi.security.SecurityService', '$interpolate', function (authService, $interpolate) {
+	    return {
+	        restrict: 'A',
+	        link: function ($scope, element) {
+	            var isActive = element.attr('jd-active');
+
+	            $scope.$watch(function () {
+	                var value = $interpolate('{{' + isActive + '}}')($scope);
+	                return $scope.$eval(value)
+	            },
+				function (value) {
+				    var elem;
+
+				    elem = element;
+
+				    if (!value) {
+				        angular.forEach(elem, function (item) {
+
+				            var $item = $(item);
+				            $item.attr('disabled', true);
+				            $item.attr('readonly', true);
+
+				            var events = $._data($item[0]).events;
+				            if (events && events.click) {
+				                $._data($item[0], 'as.click', events.click.slice(0));
+				            }
+				        });
+
+				        elem.unbind('click').click(function (e) {
+				            e.stopPropagation();
+				            return false;
+				        });
+				    } else {
+				        elem.removeAttr('readonly');
+				        elem.removeAttr('disabled');
+
+				        angular.forEach(elem, function (item) {
+				            var $item = $(item);
+				            var clicks = $._data($item[0], 'as.click');
+				            if (clicks) {
+				                angular.forEach(clicks, function (click) {
+				                    $item.unbind('click').click(click);
+				                });
+				            }
+				        });
+				    }
+				});
+	        }
+	    };
 	}]).config(['$httpProvider', function ($httpProvider) {
 		// register authInterceptor
 		$httpProvider.interceptors.push('jedi.security.SecurityInterceptor');
