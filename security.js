@@ -200,13 +200,15 @@
 					if (authData) {
 
 						if (authData.useRefreshTokens) {
-
-							var data = "grant_type=refresh_token&refresh_token=" + authData.refreshToken + "&client_id=" + _authSettings.clientId;
-
+							
+							var data = { grant_type: 'refresh_token' };
+							data.client_id = _authSettings.clientId;
+							data.refreshToken = authData.token;
+							
 							_storageService.remove(_authSettings.storageKey);
 
 							$http.post(_authSettings.authUrlBase + _authSettings.refreshTokenUrl, data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
-
+	
 								_identity.useRefreshTokens = true;
 								_setIdentity(response);
 
@@ -215,11 +217,13 @@
 								deferred.resolve(response);
 
 							}).error(function (err, status, headers, config) {
+								
 								// limpa dados
 								_resetAuthData();
 
 								deferred.reject(err);
 								$rootScope.$broadcast('jedi.security:refresh-error', err, status, config);
+								
 							});
 						}
 					}
