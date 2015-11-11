@@ -1,16 +1,16 @@
-// author: Fábio Henrique da Silva Viana <fabiohsv@ciandt.com>
-// license: MIT
-// homepage: https://github.com/jediproject/ng-jedi-security.git
-
 'use strict';
 
 (function (factory) {
-	if (typeof define === 'function') {
-		define(["cryptojslib", "angular"], factory);
-	} else {
-		return factory();
-	}
-}(function(){
+    if (typeof define === 'function') {
+        define(['cryptojslib', 'angular'], factory);
+    } else {
+        if (typeof module !== "undefined" && typeof exports !== "undefined" && module.exports === exports){
+            module.exports = 'jedi.security';
+            require('cryptojslib');
+        }
+        return factory();
+    }
+}(function() {
 
 	var _storageService = {
 		get: function (id) {
