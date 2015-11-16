@@ -82,7 +82,7 @@
 
 			if (response.expires_in) {
 				// TODO tratar adequadamente
-				_identity.expires = new Date().getTime() + response.expires_in;
+				_identity.expires = response.expires_in;				
 			}
 
 			if (_authSettings.resolveRoles) {
@@ -259,9 +259,14 @@
 
 			var authService = $injector.get('jedi.security.SecurityService');
 			var token = authService.getToken();
-
+			
 			if (token) {
 				var authData = _getAuthData();
+				
+				if(new Date().getTime() > new Date().getTime() + ((authData.identity.expires * 0.75) * 1000)){
+					authService.refreshToken();				
+				}				
+				
 				var settings = _getAuthSettings();
 				var seconds = new Date().getTime();
 				config.headers.Authorization = 'Bearer ' + token;
