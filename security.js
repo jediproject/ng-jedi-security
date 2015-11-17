@@ -251,6 +251,8 @@
 		}];
 	}]).factory('jedi.security.SecurityInterceptor', ['$q', '$injector', '$location', '$rootScope', function ($q, $injector, $location, $rootScope) {
 
+		var $log = angular.injector(['ng']).get('$log');
+
 		var authInterceptorServiceFactory = {};
 
 		var _request = function (config) {
@@ -264,7 +266,8 @@
 				var authData = _getAuthData();
 				
 				if(new Date().getTime() > new Date().getTime() + ((authData.identity.expires * 0.75) * 1000)){
-					authService.refreshToken();				
+					authService.refreshToken();		
+					$log.info('Refreshing token');		
 				}				
 				
 				var settings = _getAuthSettings();
@@ -273,6 +276,10 @@
 				config.headers.ValidationTime = seconds;
 				config.headers.Validation = CryptoJS.MD5(authData.token + authData.identity.validation + seconds).toString();
 				config.clientId = settings.clientId;
+				
+				$log.info('Authorization: ' + config.headers.Authorization);
+				$log.info('ValidationTime: ' + config.headers.ValidationTime);
+				$log.info('Validation: ' + config.headers.Validation);
 			}
 
 			return config;
