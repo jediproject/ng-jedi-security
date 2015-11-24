@@ -85,6 +85,8 @@ Returns true if the user has roles and false otherwise.
 ##### IsAuthenticated
 Returns true if the user is authenticated and false otherwise.
 
+**[Back to top](#ng-jedi-security)**
+
 #### Interceptor
 Injects the authentication data in the header of every request that you make so you don't need to worry about it.
 
@@ -93,12 +95,16 @@ Also it has a responseError treatment that broadcasts an event in case your sess
 
 Otherwise it will refresh you token.
 
+**[Back to top](#ng-jedi-security)**
+
 #### Filters
 A couple of filters to help you use all the things that this module has to offer.
 ##### HasRoles
 In case the user don't have the roles specified returns an empty array (false).
 ##### IsAuthenticated
 In case the user is not authenticated returns an empty array (false).
+
+**[Back to top](#ng-jedi-security)**
 
 #### Directives
 A few directives to help you use all the things that this module has to offer.
@@ -111,3 +117,4 @@ Enable or disable(readonly) a DOM element according to the user's roles.
 ##### jdActive
 Enable or disable(readonly) a DOM element. Can receive true/false, a variable from the controller or a function to determine its value.
 
+**[Back to top](#ng-jedi-security)**
