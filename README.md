@@ -1,8 +1,9 @@
 # [ng-jedi-security](https://github.com/jediproject/ng-jedi-security)
 An [AngularJs](https://angularjs.org/) component for Authentication and Authorization with token strategy.
 
-  1. [Install](#install)
-  1. [How To Use](#how-to-use)
+1. [Install](#install)
+1. [How to Use](#how-to-use)
+  
   
   ### Install
 
@@ -30,7 +31,7 @@ angular.module('yourApp', ['jedi.security']);
 	1. [GetToken](#gettoken)
 	1. [HasRoles](#hasroles)
 	1. [IsAuthenticated](#isauthenticated)
-1. [Interceptors](#interceptors)
+1. [Interceptor](#interceptor)
 1. [Filters](#filters)
 	1. [HasRoles](#hasroles)
 	1. [IsAuthenticated](#isauthenticated)
