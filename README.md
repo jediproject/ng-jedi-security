@@ -48,11 +48,15 @@ At your ```app.config``` inject the ```jedi.security.SecurityServiceProvider``` 
 
 ```javascript
 authServiceProvider.config({
-	authUrlBase: 'Your authentication API UrlBase',
+	authUrlBase: 'Your authentication API UrlBase',	
 	signInUrl: 'e.g.: "/auth"',
+	signUpUrl: 'e.g.: "/auth/signup"',
 	signOutUrl: 'e.g.: "/auth/signout"',
 	refreshTokenUrl: 'e.g.: "/auth/refreshtoken"',
+	validateTokenUrl: 'e.g.: "/auth/validatetoken"',
 	clientId: 'Your application name. e.g.: "myapp"',
+	storageKey: 'The key that the storageService will use to store the auth data',
+	resolveRoles: 'Function responsible to retrive the roles for the user and make it an array',
 	onCreateIdentity: function (response, identity) {		
 		// Complements the identity object with information from the logged user:
 		if (response.name) {
