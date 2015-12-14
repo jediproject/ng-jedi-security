@@ -267,7 +267,7 @@
 				
 				if(new Date().getTime() > new Date().getTime() + ((authData.identity.expires * 0.75) * 1000)){
 					authService.refreshToken();		
-					$log.info('Refreshing token');		
+					$log.info('Refreshing token');
 				}				
 				
 				var settings = _getAuthSettings();
@@ -276,10 +276,6 @@
 				config.headers.ValidationTime = seconds;
 				config.headers.Validation = CryptoJS.MD5(authData.token + authData.identity.validation + seconds).toString();
 				config.clientId = settings.clientId;
-				
-				$log.info('Authorization: ' + config.headers.Authorization);
-				$log.info('ValidationTime: ' + config.headers.ValidationTime);
-				$log.info('Validation: ' + config.headers.Validation);
 			}
 
 			return config;
@@ -287,18 +283,13 @@
 
 		var _responseError = function (rejection) {
 			if (rejection.status === 401 && !rejection.config.bypassExceptionInterceptor) {
-				var authData = _getAuthData();
-				if (authData && authData.useRefreshTokens) {
-					var authService = $injector.get('jedi.security.SecurityService');
-					authService.refreshToken();
-					// todo: verificar como resubmeter a req. após renovar token
-				} else {
-					// limpa dados de autenticação
-					_resetAuthData();
+				$log.info('Session expired');
 
-					// emite evento de sessão expirada
-					$rootScope.$broadcast('jedi.security:session-expired', rejection.data, rejection.status, rejection.config);
-				}
+				// limpa dados de autenticação
+				_resetAuthData();
+
+				// emite evento de sessão expirada
+				$rootScope.$broadcast('jedi.security:session-expired', rejection.data, rejection.status, rejection.config);
 			}
 			return $q.reject(rejection);
 		};
