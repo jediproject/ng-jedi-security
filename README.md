@@ -3,9 +3,9 @@ An [AngularJs](https://angularjs.org/) component for Authentication and Authoriz
 
 1. [Install](#install)
 1. [How to Use](#how-to-use)
-  
-  
-  ### Install
+
+
+### Install
 
 * Install the dependency:
 
@@ -22,6 +22,7 @@ angular.module('yourApp', ['jedi.security']);
 
 ### How To Use
 
+1. [Configuration](#configuration)
 1. [Methods](#methods)
 	1. [Initialize](#initialize)
 	1. [SignUp](#signup)
@@ -40,6 +41,36 @@ angular.module('yourApp', ['jedi.security']);
 	1. [jdRolesToActive](#jdrolestoactive)
 	1. [jdActive](#jdactive)
 
+#### Configuration
+
+At your ```app.config``` inject the ```jedi.security.SecurityServiceProvider``` so you can configure the authentication the way you need it.
+
+
+```javascript
+authServiceProvider.config({
+	authUrlBase: 'Your authentication API UrlBase',
+	signInUrl: 'e.g.: "/auth"',
+	signOutUrl: 'e.g.: "/auth/signout"',
+	refreshTokenUrl: 'e.g.: "/auth/refreshtoken"',
+	clientId: 'Your application name. e.g.: "myapp"',
+	onCreateIdentity: function (response, identity) {		
+		// Complements the identity object with information from the logged user:
+		if (response.name) {
+			identity.name = response.name;
+		}
+		if (response.email) {
+			identity.email = response.email;
+		}
+		if (response.cpf) {
+			identity.cpf = response.cpf;
+		}
+		if (response.login) {
+			identity.login = response.login;
+		}
+		return identity;
+	}
+});
+```
 
 #### Methods
 All the functionalities that this module has to offer.
