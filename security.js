@@ -143,32 +143,39 @@
 				},
 
 				signIn: function (loginData) {
+					
+					var anotherUserIsLoggedIn = _storageService.get(_authSettings.storageKey);
 
-					var data = { grant_type: 'password' };
-					data = angular.extend(data, loginData);
-					data.client_id = _authSettings.clientId;
-
-					var deferred = $q.defer();
-
-					$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, jQuery.param(data), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
-
-						_setIdentity(response);
-
-						deferred.resolve(response);
-
-						$rootScope.$broadcast('jedi.security:login-success', _identity);
-
-					}).error(function (err, status, headers, config) {
-
-						_resetAuthData();
-
-						deferred.reject(err);
-
-						$rootScope.$broadcast('jedi.security:login-error', err, status, config, loginData);
-
-					});
-
-					return deferred.promise;
+					if (!anotherUserIsLoggedIn) {
+						var data = { grant_type: 'password' };
+						data = angular.extend(data, loginData);
+						data.client_id = _authSettings.clientId;
+	
+						var deferred = $q.defer();
+	
+						$http.post(_authSettings.authUrlBase + _authSettings.signInUrl, jQuery.param(data), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, bypassExceptionInterceptor: true }).success(function (response) {
+	
+							_setIdentity(response);
+	
+							deferred.resolve(response);
+	
+							$rootScope.$broadcast('jedi.security:login-success', _identity);
+	
+						}).error(function (err, status, headers, config) {
+	
+							_resetAuthData();
+	
+							deferred.reject(err);
+	
+							$rootScope.$broadcast('jedi.security:login-error', err, status, config, loginData);
+	
+						});
+	
+						return deferred.promise;
+					} else {
+						//If there is another session open in the same browser.
+                        $rootScope.$broadcast('jedi.security:login-error', { error: 'another_user_is_logged_in' });
+					}
 				},
 
 				signOut: function (cause) {
